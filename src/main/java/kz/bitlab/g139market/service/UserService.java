@@ -1,5 +1,6 @@
 package kz.bitlab.g139market.service;
 
+import kz.bitlab.g139market.dto.ChangePasswordDto;
 import kz.bitlab.g139market.dto.UserCreateDto;
 import kz.bitlab.g139market.dto.UserResponseDto;
 import kz.bitlab.g139market.entity.Role;
@@ -43,4 +44,41 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
+    public void changePassword(ChangePasswordDto dto) throws BadRequestException {
+        User user = userRepository.findById(dto.getUserId()).orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
+            throw new BadRequestException("Incorrect current password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+
+        userRepository.save(user);
+    }
+
+    public void assignRoleToUser(Long userId, Long roleId) throws BadRequestException {
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        Role role = roleService.getRoleById(roleId);
+
+        if (user.getRoles().contains(role)) {
+            throw new BadRequestException("User already has this role");
+        }
+
+        user.getRoles().add(role);
+
+        userRepository.save(user);
+    }
+
+    public void unassignRoleToUser(Long userId, Long roleId) throws BadRequestException {
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        Role role = roleService.getRoleById(roleId);
+
+        if (!user.getRoles().contains(role)) {
+            throw new BadRequestException("User does not have this role");
+        }
+
+        user.getRoles().remove(role);
+
+        userRepository.save(user);
+    }
 }
