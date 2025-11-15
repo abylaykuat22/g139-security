@@ -29,12 +29,6 @@ public class UserController {
 
     @GetMapping("/find-by-username")
     public ResponseEntity<?> findByUsername(@RequestParam String username) {
-        try {
-            return ResponseEntity.ok(userService.findByUsername(username));
-        } catch (NotFoundException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return ResponseEntity.ok(userService.findByUsername(username));
     }
 }

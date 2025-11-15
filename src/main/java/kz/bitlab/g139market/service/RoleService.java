@@ -4,6 +4,7 @@ import kz.bitlab.g139market.entity.Role;
 import kz.bitlab.g139market.exception.NotFoundException;
 import kz.bitlab.g139market.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service

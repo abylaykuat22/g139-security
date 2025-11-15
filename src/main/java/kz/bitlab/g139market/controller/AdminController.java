@@ -20,30 +20,14 @@ public class AdminController {
     }
 
     @PutMapping("/assign-role")
-    public ResponseEntity<?> assignRole(@RequestParam Long userId, @RequestParam Long roleId) {
-        try {
-            userService.assignRoleToUser(userId, roleId);
-            return ResponseEntity.ok("Role assigned successfully");
-        } catch (NotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (BadRequestException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Internal server error");
-        }
+    public ResponseEntity<?> assignRole(@RequestParam Long userId, @RequestParam Long roleId) throws BadRequestException {
+        userService.assignRoleToUser(userId, roleId);
+        return ResponseEntity.ok("Role assigned successfully");
     }
 
     @PutMapping("/unassign-role")
-    public ResponseEntity<?> unassignRole(@RequestParam Long userId, @RequestParam Long roleId) {
-        try {
-            userService.unassignRoleToUser(userId, roleId);
-            return ResponseEntity.ok("Role unassigned successfully");
-        } catch (NotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (BadRequestException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Internal server error");
-        }
+    public ResponseEntity<?> unassignRole(@RequestParam Long userId, @RequestParam Long roleId) throws BadRequestException {
+        userService.unassignRoleToUser(userId, roleId);
+        return ResponseEntity.ok("Role unassigned successfully");
     }
 }
