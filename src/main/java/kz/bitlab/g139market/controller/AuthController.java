@@ -1,5 +1,7 @@
 package kz.bitlab.g139market.controller;
 
+import kz.bitlab.g139market.dto.AuthRequest;
+import kz.bitlab.g139market.dto.AuthResponse;
 import kz.bitlab.g139market.dto.ChangePasswordDto;
 import kz.bitlab.g139market.dto.UserCreateDto;
 import kz.bitlab.g139market.exception.NotFoundException;
@@ -19,8 +21,20 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserCreateDto dto) {
         try {
-            userService.register(dto);
-            return ResponseEntity.ok("User registered successfully");
+            AuthResponse response = userService.register(dto);
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Internal server error");
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody AuthRequest dto) {
+        try {
+            AuthResponse response = userService.login(dto);
+            return ResponseEntity.ok(response);
         } catch (BadRequestException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {

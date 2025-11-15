@@ -1,8 +1,6 @@
 package kz.bitlab.g139market.service;
 
-import kz.bitlab.g139market.dto.ChangePasswordDto;
-import kz.bitlab.g139market.dto.UserCreateDto;
-import kz.bitlab.g139market.dto.UserResponseDto;
+import kz.bitlab.g139market.dto.*;
 import kz.bitlab.g139market.entity.Role;
 import kz.bitlab.g139market.entity.User;
 import kz.bitlab.g139market.exception.NotFoundException;
@@ -10,6 +8,8 @@ import kz.bitlab.g139market.mapper.UserMapper;
 import kz.bitlab.g139market.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +22,10 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
+    private final UserDetailsService userDetailsService;
+    private final JwtService jwtService;
 
-    public void register(UserCreateDto dto) throws BadRequestException {
+    public AuthResponse register(UserCreateDto dto) throws BadRequestException {
         User existUser = userRepository.findByUsername(dto.getUsername()).orElse(null);
         if (existUser != null) {
             throw new BadRequestException("Username already exists");
@@ -35,7 +37,21 @@ public class UserService {
         Role role = roleService.getUserRole();
         user.setRoles(Set.of(role));
 
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        return generateTokens(user);
+    }
+
+    private AuthResponse generateTokens(User user) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+
+        String accessToken = jwtService.generateAccessToken(userDetails);
+        String refreshToken = jwtService.generateRefreshToken(userDetails);
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 
     public UserResponseDto findByUsername(String username) {
@@ -80,5 +96,16 @@ public class UserService {
         user.getRoles().remove(role);
 
         userRepository.save(user);
+    }
+
+    public AuthResponse login(AuthRequest dto) throws BadRequestException {
+        User user = userRepository.findByUsername(dto.getUsername())
+                .orElseThrow(() -> new BadRequestException("Invalid username or password"));
+
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
+            throw new BadRequestException("Invalid username or password");
+        }
+
+        return generateTokens(user);
     }
 }
