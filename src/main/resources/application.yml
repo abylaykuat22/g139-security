@@ -1,8 +1,8 @@
 spring:
   application:
-    name: my-market
+    name: bitlab-market
   datasource:
-    url: jdbc:postgresql://localhost:5432/g139?currentSchema=market
+    url: jdbc:postgresql://localhost:5432/g139?currentSchema=bitlab_market
     username: postgres
     password: postgres
   liquibase:

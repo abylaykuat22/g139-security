@@ -4,15 +4,22 @@ import kz.bitlab.g139market.dto.*;
 import kz.bitlab.g139market.entity.Role;
 import kz.bitlab.g139market.entity.User;
 import kz.bitlab.g139market.exception.NotFoundException;
+import kz.bitlab.g139market.exception.UserAlreadyExistsException;
 import kz.bitlab.g139market.mapper.UserMapper;
 import kz.bitlab.g139market.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +59,7 @@ public class UserService {
 
     public UserResponseDto findByUsername(String username) {
         return userRepository.findByUsername(username)
-                .map(u -> UserMapper.INSTANCE.toDto(u))
+                .map(UserMapper.INSTANCE::toDto)
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
@@ -119,5 +126,41 @@ public class UserService {
         }
 
         return generateTokens(user);
+    }
+
+    public User getCurrentUser() {
+//        if (SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
+//            return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//        }
+        return Optional.ofNullable(SecurityContextHolder.getContext())
+                .map(SecurityContext::getAuthentication)
+                .map(Authentication::getPrincipal)
+                .map(User.class::cast)
+                .orElseThrow(() -> new NotFoundException("Current user not found"));
+    }
+
+    public UserResponseDto updateUser(UserUpdateDto dto) {
+        User currentUser = getCurrentUser();
+        if (userRepository.existsByUsername(dto.getUsername())) {
+            throw new UserAlreadyExistsException("Username already exists");
+        }
+
+        safetySaveValue(dto.getUsername(), currentUser::setUsername);
+        safetySaveValue(dto.getBirthdate(), currentUser::setBirthdate);
+        safetySaveValue(dto.getFullName(), currentUser::setFullName);
+
+
+        userRepository.save(currentUser);
+
+        return UserMapper.INSTANCE.toDto(currentUser);
+    }
+
+    public <T> void safetySaveValue(T value, Consumer<T> consumer) {
+        if (value != null) consumer.accept(value);
+    }
+
+    public void deleteCurrentUser() {
+        User currentUser = getCurrentUser();
+        userRepository.delete(currentUser);
     }
 }
